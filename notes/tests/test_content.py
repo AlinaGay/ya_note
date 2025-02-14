@@ -12,18 +12,19 @@ from notes.models import Note
 User = get_user_model()
 
 
-class TestDetailPage(TestCase):
+class TestAddPage(TestCase):
+
+    ADD_URL = reverse('notes:add')
 
     @classmethod
     def setUpTestData(cls):
         cls.author = User.objects.create(username='Пользователь')
-        cls.notes = Note.objects.create(
-            title='Заметка',
-            text='Просто текст.',
-            slug='new',
-            author=cls.author
-        )
-        cls.detail_url = reverse('notes:detail', args=(cls.notes.slug,))
+
+    def test_autorized_user_has_form(self):
+        self.client.force_login(self.author)
+        response = self.client.get(self.ADD_URL)
+        self.assertIn('form', response.context)
+        self.assertIsInstance(response.context['form'], NoteForm)
 
 
 class TestListPage(TestCase):
@@ -50,18 +51,3 @@ class TestListPage(TestCase):
         object_list = response.context['object_list']
         notes_count = object_list.count()
         self.assertEqual(notes_count, settings.NOTES_COUNT_ON_LIST_PAGE)
-
-
-class TestAddPage(TestCase):
-
-    ADD_URL = reverse('notes:add')
-
-    @classmethod
-    def setUpTestData(cls):
-        cls.author = User.objects.create(username='Пользователь')
-
-    def test_autorized_user_has_form(self):
-        self.client.force_login(self.author)
-        response = self.client.get(self.ADD_URL)
-        self.assertIn('form', response.context)
-        self.assertIsInstance(response.context['form'], NoteForm)
