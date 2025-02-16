@@ -99,3 +99,9 @@ class TestNoteEditDelete(TestCase):
         self.assertRedirects(response, self.success_url)
         notes_count = Note.objects.count()
         self.assertEqual(notes_count, 0)
+
+    def test_reader_cant_delete_note(self):
+        response = self.reader_client.delete(self.delete_url)
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
+        notes_count = Note.objects.count()
+        self.assertEqual(notes_count, 1)
