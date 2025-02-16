@@ -48,6 +48,7 @@ class TestNoteCreation(TestCase):
 
 class TestNoteEditDelete(TestCase):
 
+    NOTE_TEXT = 'Текст'
     NEW_NOTE_TITLE = 'Заголовок другой'
     NEW_NOTE_TEXT = 'Текст другой'
     NEW_NOTE_SLUG = 'another_new'
@@ -86,4 +87,10 @@ class TestNoteEditDelete(TestCase):
         self.assertRedirects(response, self.success_url)
         self.notes.refresh_from_db()
         self.assertEqual(self.notes.text, self.NEW_NOTE_TEXT)
+
+    def test_eader_cant_edit_note(self):
+        response = self.reader_client.post(self.edit_url, data=self.form_data)
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
+        self.notes.refresh_from_db()
+        self.assertEqual(self.notes.text, self.NOTE_TEXT)    
 
