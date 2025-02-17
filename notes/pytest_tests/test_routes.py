@@ -40,14 +40,18 @@ def test_pages_availability_for_auth_user(not_author_client, name):
     ),
 )
 @pytest.mark.parametrize(
-    'name',
-    ('notes:detail', 'notes:edit', 'notes:delete'),
+    'name, args',
+    (
+        ('notes:detail', pytest.lazy_fixture('slug_for_args')),
+        ('notes:edit', pytest.lazy_fixture('slug_for_args')),
+        ('notes:delete', pytest.lazy_fixture('slug_for_args')),
+    ),
 )
 def test_pages_availability_for_differenr_users(parametrized_client,
                                                 name,
-                                                note,
+                                                args,
                                                 expected_status):
-    url = reverse(name, args=(note.slug,))
+    url = reverse(name, args=args)
     response = parametrized_client.get(url)
     assert response.status_code == expected_status
 
