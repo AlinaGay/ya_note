@@ -18,5 +18,15 @@ def test_notes_list_for_different_users(note, parametrized_client, note_in_list)
     assert (note in object_list) is note_in_list
 
 
-
-
+@pytest.mark.parametrize(
+    'name, args',
+    (
+        ('notes:add', None),
+        ('notes:edit', pytest.lazy_fixture('slug_for_args')),
+    )
+)
+def test_pages_contain_form(author_client, name, args):
+    url = reverse(name, args=args)
+    response = author_client.get(url)
+    assert 'form' in response.context
+    assert isinstance(response.context['form'], NoteForm)
