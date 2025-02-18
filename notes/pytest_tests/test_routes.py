@@ -47,7 +47,7 @@ def test_pages_availability_for_auth_user(not_author_client, name):
         ('notes:delete', pytest.lazy_fixture('slug_for_args')),
     ),
 )
-def test_pages_availability_for_differenr_users(parametrized_client,
+def test_pages_availability_for_different_users(parametrized_client,
                                                 name,
                                                 args,
                                                 expected_status):
