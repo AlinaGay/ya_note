@@ -2,6 +2,7 @@ import pytest
 from pytest_django.asserts import assertRedirects, assertFormError
 
 from django.urls import reverse
+from http import HTTPStatus
 from pytils.translit import slugify
 
 from notes.forms import WARNING
@@ -47,3 +48,13 @@ def test_empty_slug(author_client, form_data):
     new_note = Note.objects.get()
     expected_slug = slugify(form_data['title'])
     assert new_note.slug == expected_slug
+
+
+def test_author_can_edit_note(author_client, form_data, note):
+    url = reverse('notes:edit', args=(note.slug,))
+    response = author_client.post(url, form_data)
+    assertRedirects(response, reverse('notes:success'))
+    note.refresh_from_db()
+    assert note.title == form_data['title']
+    assert note.text == form_data['text']
+    assert note.slug == form_data['slug'] 
