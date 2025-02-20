@@ -19,6 +19,8 @@ class TestAddPage(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.author = User.objects.create(username='Пользователь')
+        cls.reader = User.objects.create(username='Читатель')
+        
 
     def test_autorized_user_has_form(self):
         self.client.force_login(self.author)
@@ -29,25 +31,27 @@ class TestAddPage(TestCase):
 
 class TestListPage(TestCase):
 
-    LIST_URL = reverse('notes:list')
-
     @classmethod
     def setUpTestData(cls):
         cls.author = User.objects.create(username='Пользователь')
-        all_notes = [
-            Note(
-                title=f'Заметка {index}',
-                text='Просто текст.',
-                slug=f'new-{index}',
-                author=cls.author
-            )
-            for index in range(settings.NOTES_COUNT_ON_LIST_PAGE)
-        ]
-        Note.objects.bulk_create(all_notes)
+        cls.reader = User.objects.create(username='Читатель')
+        cls.note = Note.objects.create(
+            title='Заголовок',
+            text='Текст',
+            slug='new',
+            author=cls.author
+        )
+        cls.list_url = reverse('notes:list')
 
-    def test_notes_count(self):
+    def test_note_in_list_for_author(self):
         self.client.force_login(self.author)
-        response = self.client.get(self.LIST_URL)
+        response = self.client.get(self.list_url)
         object_list = response.context['object_list']
-        notes_count = object_list.count()
-        self.assertEqual(notes_count, settings.NOTES_COUNT_ON_LIST_PAGE)
+        self.assertIn(self.note, object_list)
+
+    def test_note_not_in_list_for_another_user(self):
+        self.client.force_login(self.reader)
+        response = self.client.get(self.list_url)
+        object_list = response.context['object_list']
+        self.assertNotIn(self.note, object_list)
+ 
