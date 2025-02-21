@@ -5,7 +5,7 @@ from django.test import Client, TestCase
 from django.urls import reverse
 
 
-from notes.forms import NoteForm
+from notes.forms import NoteForm, WARNING
 from notes.models import Note
 
 
@@ -14,37 +14,70 @@ User = get_user_model()
 
 class TestNoteCreation(TestCase):
 
-    NOTE_TITLE = 'Заголовок'
-    NOTE_TEXT = 'Текст'
-    NOTE_SLUG = 'new'
+    NOTE_TITLE = 'Заголовок другой'
+    NOTE_TEXT = 'Текст другой'
+    NOTE_SLUG = 'another_new'
 
     @classmethod
     def setUpTestData(cls):
         cls.url = reverse('notes:add')
-        cls.user = User.objects.create(username='Крокодил')
-        cls.auth_client = Client()
-        cls.auth_client.force_login(cls.user)
+        cls.author = User.objects.create(username='Автор')
         cls.form_data = {
             'title': cls.NOTE_TITLE,
             'text': cls.NOTE_TEXT,
             'slug': cls.NOTE_SLUG,
-            'author': cls.user
+            'author': cls.author
         }
 
     def test_anonymous_user_cant_create_note(self):
-        self.client.post(self.url, data=self.form_data)
+        response = self.client.post(self.url, data=self.form_data)
+        login_url = reverse('users:login')
+        expected_url = f'{login_url}?next={self.url}'
+        self.assertRedirects(response, expected_url)
         notes_count = Note.objects.count()
         self.assertEqual(notes_count, 0)
 
     def test_authorized_user_can_create_note(self):
-        response = self.auth_client.post(self.url, data=self.form_data)
+        self.client.force_login(self.author)
+        response = self.client.post(self.url, data=self.form_data)
         self.assertRedirects(response, '/done/')
         notes_count = Note.objects.count()
         self.assertEqual(notes_count, 1)
         note = Note.objects.get()
         self.assertEqual(note.text, self.NOTE_TEXT)
-        self.assertAlmostEqual(note.author, self.user)
+        self.assertAlmostEqual(note.author, self.author)
 
+
+class TestSlugChecking(TestCase):
+
+    NOTE_TITLE = 'Заголовок другой'
+    NOTE_TEXT = 'Текст другой'
+    NOTE_SLUG = 'another_new'
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.url = reverse('notes:add')
+        cls.author = User.objects.create(username='Автор')
+        cls.note = Note.objects.create(
+            title='Заголовок',
+            text='Текст',
+            slug='new',
+            author=cls.author
+        )
+        cls.form_data = {
+            'title': cls.NOTE_TITLE,
+            'text': cls.NOTE_TEXT,
+            'slug': cls.NOTE_SLUG,
+            'author': cls.author
+        }
+
+    def test_not_unique_slug(self):
+        self.form_data['slug'] = self.note.slug
+        self.client.force_login(self.author)
+        response = self.client.post(self.url, data=self.form_data)
+        self.assertFormError(
+            response, 'form', 'slug', errors=(self.note.slug + WARNING))
+        self.assertEqual(Note.objects.count(), 1)
 
 class TestNoteEditDelete(TestCase):
 
