@@ -6,7 +6,7 @@ from django.urls import reverse
 from pytils.translit import slugify
 
 
-from notes.forms import NoteForm, WARNING
+from notes.forms import WARNING
 from notes.models import Note
 
 
